@@ -1,0 +1,33 @@
+%TRANSFER LEARNING BASED YORUBA ALPHABET RECOGNITION SYSTEM
+%The dataset is available for download at https://github.com/Oluwashina90/YORUBA-HANDWRITTEN-CHARACTER-DATABASE
+tic;
+%n = number of class
+n = 70;
+Train = imageDatastore('YARS TRAINING DATASET','IncludeSubfolders',true,'LabelSource','foldernames');
+Test = imageDatastore('YARS TESTING DATASET','IncludeSubfolders',true,'LabelSource','foldernames');
+
+Training_Dataset = countEachLabel(Train)
+Testing_Dataset = countEachLabel(Test)
+% Resize the images to the input size of the net
+ Train.ReadFcn = @(loc)imresize(imread(loc),[227,227]);
+ Test.ReadFcn = @(loc)imresize(imread(loc),[227,227]);
+ %[Train ,Test] = splitEachLabel(im,0.8,'randomized');
+ fc = fullyConnectedLayer(n);
+ net = alexnet;
+ ly = net.Layers;
+ ly(23) = fc;
+ cl = classificationLayer;
+ ly(25) = cl; 
+ % options for training the net if your newnet performance is low decrease
+ % the learning_rate
+ %ALEXNET
+ learning_rate = 0.00001;
+ opts = trainingOptions("rmsprop","InitialLearnRate",learning_rate,'MaxEpochs',20,'MiniBatchSize',64,'Plots','training-progress');
+ [newnet,info] = trainNetwork(Train, ly, opts);
+ [predict,scores] = classify(newnet,Test);
+ names = Test.Labels; 
+ pred = (predict==names);
+ s = size(pred);
+ acc = sum(pred)/s(1);
+ fprintf('The accuracy of the test set is %f %% \n',acc*100);
+ toc;
